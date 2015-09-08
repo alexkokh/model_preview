@@ -145,7 +145,7 @@ void init(void)
 		{ GL_NONE, NULL }
 	};
 
-	m = new model("911.dae");	
+	m = new model("mdl.dae");	
 	program = LoadShaders(shaders);
 	glUseProgram(program);
 
