@@ -39,6 +39,10 @@ namespace SE_CORE
 		dae_reader_t *reader = createDAEReader(path);
 		int indices_size = 0;
 		int vertices_size = 0;
+
+		if (!reader)
+			return -1;
+
 		for (uint32_t i = 0; i < reader->geometry.size(); i++)
 		{
 			geometry_t &geometry = reader->geometry[i];
