@@ -145,7 +145,7 @@ void init(void)
 		{ GL_NONE, NULL }
 	};
 
-	m = new model("mdl1.dae");	
+	m = new model("mdl.dae");	
 
 	if (!m)
 		return;
