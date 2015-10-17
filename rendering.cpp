@@ -8,15 +8,15 @@ namespace SE_CORE
 
 	render_target::~render_target()
 	{
-		glDeleteVertexArrays(1, &m_VertexArrayID);
-		glDeleteBuffers(NumBuffers, m_BufferIDs);
+		glDeleteVertexArrays(1, &_VertexArrayID);
+		glDeleteBuffers(NumBuffers, _BufferIDs);
 	}
 
 	void render_target::draw()
 	{
-		for (uint32_t i = 0; i < m_MeshDrawRange.size(); i++)
+		for (uint32_t i = 0; i < _MeshDrawRange.size(); i++)
 		{
-			vector<vector<draw_range_t>>& ranges = m_MeshDrawRange[i];
+			vector<vector<draw_range_t>>& ranges = _MeshDrawRange[i];
 			for (uint32_t j = 0; j < ranges.size(); j++)
 			{
 				vector<draw_range_t> range = ranges[j];
@@ -48,14 +48,14 @@ namespace SE_CORE
 			geometry_t &geometry = reader->geometry[i];
 			indices_size  += geometry.indices.size() * sizeof(GLuint);
 			vertices_size += geometry.bufferData.size() * sizeof(float);
-			m_MeshDrawRange.push_back(geometry.meshes);
+			_MeshDrawRange.push_back(geometry.meshes);
 		}
 
 		int err;
 
-		glBindVertexArray(m_VertexArrayID);
+		glBindVertexArray(_VertexArrayID);
 
-		glBindBuffer(GL_ARRAY_BUFFER, m_BufferIDs[ArrayBuffer]);
+		glBindBuffer(GL_ARRAY_BUFFER, _BufferIDs[ArrayBuffer]);
 		glBufferData(GL_ARRAY_BUFFER, vertices_size, NULL, GL_STATIC_DRAW);
 		err = glGetError();
 
@@ -69,7 +69,7 @@ namespace SE_CORE
 			offset += data_size;
 		}
 
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_BufferIDs[ElementBuffer]);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _BufferIDs[ElementBuffer]);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size, NULL, GL_STATIC_DRAW);
 		err = glGetError();
 
@@ -101,14 +101,14 @@ namespace SE_CORE
 
 	int render_target::init_gl_buffers()
 	{
-		glGenVertexArrays(1, &m_VertexArrayID);
-		if (!m_VertexArrayID)
+		glGenVertexArrays(1, &_VertexArrayID);
+		if (!_VertexArrayID)
 			return glGetError();
 
-		glGenBuffers(NumBuffers, m_BufferIDs);
+		glGenBuffers(NumBuffers, _BufferIDs);
 		for (uint32_t i = 0; i < NumBuffers; i++)
 		{
-			if (!m_BufferIDs[i])
+			if (!_BufferIDs[i])
 				return glGetError();
 		}
 

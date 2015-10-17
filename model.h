@@ -9,10 +9,10 @@ namespace SE_CORE
 	class model
 	{
 	private:
-		vmath::vec3 m_Position;
-		vmath::vec3 m_Rotation;
-		vmath::vec3 m_Scale;
-		render_target m_RenderTarget;
+		vmath::vec3 _Position;
+		vmath::vec3 _Rotation;
+		vmath::vec3 _Scale;
+		render_target _RenderTarget;
 	public:
 		model(char *path);
 		void draw();

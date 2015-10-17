@@ -4,11 +4,11 @@ namespace SE_CORE
 {
 	model::model(char *path)
 	{
-		m_RenderTarget.load(path);
+		_RenderTarget.load(path);
 	}
 
 	void model::draw()
 	{
-		m_RenderTarget.draw();
+		_RenderTarget.draw();
 	}
 }
