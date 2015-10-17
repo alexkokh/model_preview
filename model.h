@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vmath.h"
-#include "rendering.h"
+#include "mesh.h"
 #include "DAEReader.h"
 
 namespace SE_CORE
@@ -12,7 +12,7 @@ namespace SE_CORE
 		vmath::vec3 _Position;
 		vmath::vec3 _Rotation;
 		vmath::vec3 _Scale;
-		render_target _RenderTarget;
+		mesh _mesh;
 	public:
 		model(char *path);
 		void draw();
