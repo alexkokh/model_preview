@@ -9,6 +9,7 @@
 #include <vector>
 #include "DAEReader.h"
 #include "vmath.h"
+#include "LoadShaders.h"
 
 using namespace vmath;
 
