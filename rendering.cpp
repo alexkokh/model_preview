@@ -28,4 +28,23 @@ namespace SE_CORE
 
 		return 1;
 	}
+
+	void render_target::draw()
+	{
+		glBindVertexArray(_VertexArrayID);
+		glBindBuffer(GL_ARRAY_BUFFER, _BufferIDs[ArrayBuffer]);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _BufferIDs[ElementBuffer]);
+
+		for (uint32_t i = 0; i < _vertexAttrib.size(); i++)
+		{
+			const int ID = _vertexAttrib[i].ID;
+			const int size = _vertexAttrib[i].size;
+			const int type = _vertexAttrib[i].type;
+			const int normalized = _vertexAttrib[i].normalized;
+			const int stride = _vertexAttrib[i].stride;
+			const void *pointer = _vertexAttrib[i].pointer;
+			glVertexAttribPointer(ID, size, type, normalized, stride, pointer);
+			glEnableVertexAttribArray(ID);
+		}
+	}
 }

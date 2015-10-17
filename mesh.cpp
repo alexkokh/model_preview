@@ -8,11 +8,13 @@ namespace SE_CORE
 
 	mesh::~mesh()
 	{
-
 	}
 
 	void mesh::draw()
 	{
+		// bind vertex array and buffers, set vertex attribs
+		render_target::draw();
+
 		for (uint32_t i = 0; i < _MeshDrawRange.size(); i++)
 		{
 			vector<vector<draw_range_t>>& ranges = _MeshDrawRange[i];
@@ -24,7 +26,6 @@ namespace SE_CORE
 					int err;
 					glDrawElements(GL_TRIANGLES, range[k].count, GL_UNSIGNED_INT, (void *)(range[k].offset * sizeof(GLuint)));
 					err = glGetError();
-					err = err;
 				}
 			}
 		}
@@ -82,16 +83,16 @@ namespace SE_CORE
 			offset += data_size;
 		}
 
-		int stride = getElementSize(reader) * sizeof(float);
+		_ElementSize = getElementSize(reader);
+		const int stride = _ElementSize * sizeof(float);
 
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, 0);
-		glEnableVertexAttribArray(0);
+		vertex_attrib_t coords = { 0, 3, GL_FLOAT, GL_FALSE, stride, 0 };
+		vertex_attrib_t normal = { 1, 3, GL_FLOAT, GL_FALSE, stride, (void *)12 };
+		vertex_attrib_t texcoord = { 2, 2, GL_FLOAT, GL_FALSE, stride, (void *)24 };
 
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void *)12);
-		glEnableVertexAttribArray(1);
-
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void *)24);
-		glEnableVertexAttribArray(2);
+		_vertexAttrib.push_back(coords);
+		_vertexAttrib.push_back(normal);
+		_vertexAttrib.push_back(texcoord);
 
 		destroyDAEReader(reader);
 
