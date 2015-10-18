@@ -14,7 +14,8 @@ namespace SE_CORE
 		vmath::vec3 _Scale;
 		mesh _mesh;
 	public:
-		model(char *path);
+		model(ShaderInfo *shaders, int numShaders, char *path);
 		void draw();
+		GLuint get_program();
 	};
 }

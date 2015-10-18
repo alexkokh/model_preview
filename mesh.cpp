@@ -6,6 +6,10 @@ namespace SE_CORE
 	{
 	}
 
+	mesh::mesh(ShaderInfo *shaders, int numShaders) : render_target(shaders, numShaders)
+	{
+	}
+
 	mesh::~mesh()
 	{
 	}
@@ -29,6 +33,11 @@ namespace SE_CORE
 				}
 			}
 		}
+	}
+
+	GLuint mesh::get_program()
+	{
+		return _program;
 	}
 
 	int mesh::load(char *path)

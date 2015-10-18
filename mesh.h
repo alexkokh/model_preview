@@ -14,9 +14,11 @@ namespace SE_CORE
 		vector<vector<vector<draw_range_t>>> _MeshDrawRange;
 	public:
 		mesh();
+		mesh(ShaderInfo *shaders, int numShaders);
 		virtual ~mesh();
 
 		int load(char *path);
 		void draw();
+		GLuint get_program();
 	};
 }

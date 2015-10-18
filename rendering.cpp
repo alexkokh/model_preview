@@ -7,10 +7,27 @@ namespace SE_CORE
 		_initialized = init_gl_buffers();
 	}
 
+	render_target::render_target(ShaderInfo *shaders, int numShaders) : render_target()
+	{
+		compile_program(shaders, numShaders);
+	}
+
 	render_target::~render_target()
 	{
 		glDeleteVertexArrays(1, &_VertexArrayID);
 		glDeleteBuffers(NumBuffers, _BufferIDs);
+	}
+
+	void render_target::compile_program(ShaderInfo *shaders, int numShaders)
+	{
+		_shaders.clear();
+
+		for (int i = 0; i < numShaders; i++)
+		{
+			_shaders.push_back(shaders[i]);
+		}
+
+		_program = LoadShaders(_shaders.data());
 	}
 
 	int render_target::init_gl_buffers()
@@ -31,6 +48,8 @@ namespace SE_CORE
 
 	void render_target::draw()
 	{
+		glUseProgram(_program);
+
 		glBindVertexArray(_VertexArrayID);
 		glBindBuffer(GL_ARRAY_BUFFER, _BufferIDs[ArrayBuffer]);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _BufferIDs[ElementBuffer]);
