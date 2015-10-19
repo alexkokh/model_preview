@@ -5,18 +5,21 @@
 
 namespace SE_CORE
 {
-	class billboard : protected render_target
+	class billboard : public render_target
 	{
 	private:
 		GLfloat _width;
 		GLfloat _height;
+		GLuint _screenWidth;
+		GLuint _screenHeight;
 		int _numItems;
-		vec3 pos;
+		int _elementSize;
+		vec3 _pos;
 
 		void init();
 		void gen_vertices();
 	public:
-		billboard(GLfloat width, GLfloat height, int numItems);
+		billboard(GLfloat width, GLfloat height, int numItems, GLuint screenWidth, GLuint screenHeight);
 		void draw(char *str, GLfloat x, GLfloat y);
 	};
 }
