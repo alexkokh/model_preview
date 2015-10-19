@@ -8,7 +8,7 @@ using namespace DAE_READER;
 
 namespace SE_CORE
 {
-	class mesh : protected render_target
+	class mesh : public render_target
 	{
 	private:
 		vector<vector<vector<draw_range_t>>> _MeshDrawRange;
@@ -19,6 +19,5 @@ namespace SE_CORE
 
 		int load(char *path);
 		void draw();
-		GLuint get_program();
 	};
 }

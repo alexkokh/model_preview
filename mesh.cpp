@@ -35,11 +35,6 @@ namespace SE_CORE
 		}
 	}
 
-	GLuint mesh::get_program()
-	{
-		return _program;
-	}
-
 	int mesh::load(char *path)
 	{
 		if (!_initialized)
