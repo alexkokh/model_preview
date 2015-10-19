@@ -105,6 +105,8 @@
     <ClInclude Include="rendering.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="font_fs.glsl" />
+    <None Include="font_vs.glsl" />
     <None Include="fs.glsl" />
     <None Include="vs.glsl" />
   </ItemGroup>

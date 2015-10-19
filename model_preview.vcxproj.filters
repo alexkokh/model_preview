@@ -64,5 +64,11 @@
     <None Include="vs.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="font_fs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="font_vs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -48,6 +48,7 @@ quaternion orientation(0, 0, 0, 1);
 quaternion cam_orientation(0, 0, 0, 1);
 
 model *m = NULL;
+billboard *b = NULL;
 
 mat4 LookAtRH(vec3 eye, vec3 target, vec3 up)
 {
@@ -104,6 +105,9 @@ void display(void)
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
+	program = m->get_program();
+	glUseProgram(program);
+
 	GLint pos_modelview, pos_projection, pos_normal;
 	pos_modelview = glGetUniformLocation(program, "modelview");
 	pos_projection = glGetUniformLocation(program, "projection");
@@ -116,8 +120,7 @@ void display(void)
 	mat4 model, view;
 
 	float ar = (float)window_width / window_height;
-	float size = 1;
-	mat4 ortoh_proj = ortho(-size*ar, size * ar, size, -size, -50, 20000.f);
+	float size = 100;
 	
 	//view = FPSViewRH(vec3(xpos, 0, zpos), vec3(cam_yaw, 0, 0));
 	mat4 cam_rotate = cam_orientation.asMatrix();
@@ -135,6 +138,8 @@ void display(void)
 
 	m->draw();
 	err = glGetError();
+
+	b->draw("Test", 10, 10);
 
 	glFlush();
 }
@@ -170,7 +175,7 @@ void init(void)
 	glClearColor(.15f, .35f, .75f, 0.f);
 	glPointSize(5);
 
-	billboard b(20,40,10);
+	b = new billboard(20,40,10,1600,1200);
 }
 
 void rotateCamera(vec3& camPos, vec3& camLookAt, float xzDelta, float yDelta)
