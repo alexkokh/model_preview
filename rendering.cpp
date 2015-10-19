@@ -66,4 +66,9 @@ namespace SE_CORE
 			glEnableVertexAttribArray(ID);
 		}
 	}
+
+	GLuint render_target::get_program()
+	{
+		return _program;
+	}
 }

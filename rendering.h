@@ -39,5 +39,6 @@ namespace SE_CORE
 		render_target(ShaderInfo *shaders, int numShaders);
 		virtual ~render_target();
 		void draw();
+		GLuint get_program();
 	};
 }
