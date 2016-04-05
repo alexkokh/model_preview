@@ -2,11 +2,7 @@
 
 namespace SE_CORE
 {
-	mesh::mesh()
-	{
-	}
-
-	mesh::mesh(ShaderInfo *shaders, int numShaders) : render_target(shaders, numShaders)
+	mesh::mesh(string name, ShaderInfo *shaders, uint32_t numShaders) : scene_object(name, shaders, numShaders)
 	{
 	}
 
@@ -14,10 +10,15 @@ namespace SE_CORE
 	{
 	}
 
-	void mesh::draw()
+	void mesh::render(camera *cam)
 	{
-		// bind vertex array and buffers, set vertex attribs
-		render_target::draw();
+		if (!_visible)
+			return;
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		scene_object::render(cam);
 
 		for (uint32_t i = 0; i < _MeshDrawRange.size(); i++)
 		{
@@ -27,22 +28,29 @@ namespace SE_CORE
 				vector<draw_range_t> range = ranges[j];
 				for (uint32_t k = 0; k < range.size(); k++)
 				{
-					int err;
 					glDrawElements(GL_TRIANGLES, range[k].count, GL_UNSIGNED_INT, (void *)(range[k].offset * sizeof(GLuint)));
-					err = glGetError();
 				}
 			}
 		}
+
+		if (_boundingVolume->getVisible())
+		{
+			_boundingVolume->setPosition(_position);
+			_boundingVolume->setRotation(_rotation);
+			_boundingVolume->render(cam);
+		}
+
+		glDisable(GL_BLEND);
 	}
 
-	int mesh::load(char *path)
+	uint32_t mesh::load(char *path)
 	{
-		if (!_initialized)
+		if (!_buffersInitialized)
 			return 0;
 
 		dae_reader_t *reader = createDAEReader(path);
-		int indices_size = 0;
-		int vertices_size = 0;
+		uint32_t indices_size = 0;
+		uint32_t vertices_size = 0;
 
 		if (!reader)
 			return -1;
@@ -55,40 +63,34 @@ namespace SE_CORE
 			_MeshDrawRange.push_back(geometry.meshes);
 		}
 
-		int err;
-
 		glBindVertexArray(_VertexArrayID);
 
 		glBindBuffer(GL_ARRAY_BUFFER, _BufferIDs[ArrayBuffer]);
 		glBufferData(GL_ARRAY_BUFFER, vertices_size, NULL, GL_STATIC_DRAW);
-		err = glGetError();
 
-		int offset = 0;
+		uint32_t offset = 0;
 		for (uint32_t i = 0; i < reader->geometry.size(); i++)
 		{
 			geometry_t &geometry = reader->geometry[i];
-			int data_size = geometry.bufferData.size() * sizeof(float);
+			uint32_t data_size = geometry.bufferData.size() * sizeof(float);
 			glBufferSubData(GL_ARRAY_BUFFER, offset, data_size, geometry.bufferData.data());
-			err = glGetError();
 			offset += data_size;
 		}
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _BufferIDs[ElementBuffer]);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size, NULL, GL_STATIC_DRAW);
-		err = glGetError();
 
 		offset = 0;
 		for (uint32_t i = 0; i < reader->geometry.size(); i++)
 		{
 			geometry_t &geometry = reader->geometry[i];
-			int data_size = geometry.indices.size() * sizeof(GLuint);
+			uint32_t data_size = geometry.indices.size() * sizeof(GLuint);
 			glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, data_size, geometry.indices.data());
-			err = glGetError();
 			offset += data_size;
 		}
 
-		_ElementSize = getElementSize(reader);
-		const int stride = _ElementSize * sizeof(float);
+		_elementSize = getElementSize(reader);
+		const int32_t stride = _elementSize * sizeof(float);
 
 		vertex_attrib_t coords = { 0, 3, GL_FLOAT, GL_FALSE, stride, 0 };
 		vertex_attrib_t normal = { 1, 3, GL_FLOAT, GL_FALSE, stride, (void *)12 };
@@ -97,6 +99,8 @@ namespace SE_CORE
 		_vertexAttrib.push_back(coords);
 		_vertexAttrib.push_back(normal);
 		_vertexAttrib.push_back(texcoord);
+
+		_boundingVolume = new bounding_box(this, reader, _name);
 
 		destroyDAEReader(reader);
 

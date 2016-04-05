@@ -7,19 +7,22 @@ namespace SE_CORE
 {
 	class billboard : public render_target
 	{
-	private:
+	protected:
 		GLfloat _width;
 		GLfloat _height;
 		GLuint _screenWidth;
 		GLuint _screenHeight;
-		int _numItems;
-		int _elementSize;
-		vec3 _pos;
+		vec2 _pos;
 
 		void init();
-		void gen_vertices();
+		virtual void genVertices();
+		virtual void genIndices();
 	public:
-		billboard(GLfloat width, GLfloat height, int numItems, GLuint screenWidth, GLuint screenHeight);
-		void draw(char *str, GLfloat x, GLfloat y);
+		billboard(string name);
+		~billboard();
+
+		billboard(GLfloat width, GLfloat height, GLuint screenWidth, GLuint screenHeight);
+		virtual void render();
+		virtual void prepareForRendering(vec2 pos);
 	};
 }

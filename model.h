@@ -6,16 +6,10 @@
 
 namespace SE_CORE
 {
-	class model
+	class model : public mesh
 	{
-	private:
-		vmath::vec3 _Position;
-		vmath::vec3 _Rotation;
-		vmath::vec3 _Scale;
-		mesh _mesh;
 	public:
-		model(ShaderInfo *shaders, int numShaders, char *path);
-		void draw();
-		GLuint get_program();
+		model(string name, ShaderInfo *shaders, uint32_t numShaders, char *path);
+		virtual ~model();
 	};
 }

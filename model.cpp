@@ -2,18 +2,12 @@
 
 namespace SE_CORE
 {
-	model::model(ShaderInfo *shaders, int numShaders, char *path) : _mesh(shaders, numShaders)
+	model::model(string name, ShaderInfo *shaders, uint32_t numShaders, char *path) : mesh(name, shaders, numShaders)
 	{
-		_mesh.load(path);
+		load(path);
 	}
 
-	void model::draw()
+	model::~model()
 	{
-		_mesh.draw();
-	}
-
-	GLuint model::get_program()
-	{
-		return _mesh.get_program();
 	}
 }

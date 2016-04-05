@@ -52,7 +52,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../dae_reader;$(PATHGLEW)/include;$(PATHGLUT)/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -90,24 +90,44 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="billboard.cpp" />
+    <ClCompile Include="camera.cpp" />
+    <ClCompile Include="font.cpp" />
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="LoadShaders.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="model.cpp" />
+    <ClCompile Include="ray.cpp" />
     <ClCompile Include="rendering.cpp" />
+    <ClCompile Include="scene.cpp" />
+    <ClCompile Include="bounding_box.cpp" />
+    <ClCompile Include="bounding_volume.cpp" />
+    <ClCompile Include="se_math.cpp" />
+    <ClCompile Include="world.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="billboard.h" />
+    <ClInclude Include="bounding_box.h" />
+    <ClInclude Include="bounding_volume.h" />
+    <ClInclude Include="camera.h" />
     <ClInclude Include="common.h" />
+    <ClInclude Include="font.h" />
     <ClInclude Include="mesh.h" />
     <ClInclude Include="LoadShaders.h" />
     <ClInclude Include="model.h" />
+    <ClInclude Include="ray.h" />
     <ClInclude Include="rendering.h" />
+    <ClInclude Include="scene.h" />
+    <ClInclude Include="se_math.h" />
+    <ClInclude Include="world.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="boundingvolume_fs.glsl" />
+    <None Include="boundingvolume_vs.glsl" />
     <None Include="font_fs.glsl" />
     <None Include="font_vs.glsl" />
     <None Include="fs.glsl" />
+    <None Include="ray_fs.glsl" />
+    <None Include="ray_vs.glsl" />
     <None Include="vs.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

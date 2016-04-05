@@ -3,92 +3,35 @@
 #include <stdio.h>
 #include <Windows.h>
 #include "model.h"
-#include "billboard.h"
+#include "font.h"
+#include "ray.h"
+#include "camera.h"
+#include "world.h"
 #include "LoadShaders.h"
 #include "DAEReader.h"
+#include "se_math.h"
 
 using namespace vmath;
 using namespace DAE_READER;
 using namespace SE_CORE;
 
-#define BUFFER_OFFSET(offset) ((void *)(offset))
-
-GLuint program = 0;
-
-float yaw = 0.0f;
-float roll = 0;
-float pitch = 0;
-int window_width = 1600;
-int window_height = 1200;
+uint32_t window = 0;
+uint32_t window_width = 1600;
+uint32_t window_height = 1200;
 
 mat4 model_rotate;
 vec4 dir(0, 0, 1, 0);
 vec3 position(0, 0, 0);
 
-float xpos = 0.0f;
-float zpos = 7.0f;
-float cam_yaw = 0.0f;
-float cam_pitch = 0.0f;
-int mouse_x_prev = 0;
-int mouse_y_prev = 0;
+uint32_t mouse_x_prev = 0;
+uint32_t mouse_y_prev = 0;
 
-float f;
-vec3 cam_pos(20, 4, 20);
-vec3 cam_lookat(0, 0, 0);
-
-const GLuint numTextures = 2;
-enum VAO_IDs { Triangles, NumVAOs };
-enum Buffer_IDs { ArrayBuffer, ElementBuffer, NumBuffers };
-enum Attrib_IDs { vPosition = 0, vTexCoord };
-GLuint Textures[numTextures];
-GLuint VAOs[NumVAOs];
-GLuint Buffers[NumBuffers];
-const GLuint NumVertices = 6;
 quaternion orientation(0, 0, 0, 1);
-quaternion cam_orientation(0, 0, 0, 1);
 
-model *m = NULL;
-billboard *b = NULL;
+world *wrld = NULL;
+font *textLabel = NULL;
 
-mat4 LookAtRH(vec3 eye, vec3 target, vec3 up)
-{
-	vec3 zaxis = normalize(eye - target);    // The "forward" vector.
-	vec3 xaxis = normalize(cross(up, zaxis));// The "right" vector.
-	vec3 yaxis = cross(zaxis, xaxis);     // The "up" vector.
-
-	// Create a 4x4 orientation matrix from the right, up, and forward vectors
-	// This is transposed which is equivalent to performing an inverse 
-	// if the matrix is orthonormalized (in this case, it is).
-	mat4 orientation = {
-		vec4(xaxis[0], yaxis[0], zaxis[0], 0),
-		vec4(xaxis[1], yaxis[1], zaxis[1], 0),
-		vec4(xaxis[2], yaxis[2], zaxis[2], 0),
-		vec4(0, 0, 0, 1)
-	};
-
-	// Create a 4x4 translation matrix.
-	// The eye position is negated which is equivalent
-	// to the inverse of the translation matrix. 
-	// T(v)^-1 == T(-v)
-	mat4 translation = {
-		vec4(1, 0, 0, 0),
-		vec4(0, 1, 0, 0),
-		vec4(0, 0, 1, 0),
-		vec4(-eye[0], -eye[1], -eye[2], 1)
-	};
-
-	// Combine the orientation and translation to compute 
-	// the final view matrix
-	return (orientation * translation);
-}
-
-mat4 FPSViewRH(vec3 pos, vec3 euler_angles)
-{
-	mat4 cam = rotate(euler_angles[0], vec3(0, 1, 0)); // yaw
-	cam *= translate(vec3(-pos[0], 0, -pos[2]));
-
-	return cam;
-}
+int mouse_buttons[4] = { 0 };
 
 quaternion get_offset(vec3 axis, float angle)
 {
@@ -100,50 +43,6 @@ quaternion get_offset(vec3 axis, float angle)
 	return offset;
 }
 
-void display(void)
-{
-	glClear(GL_COLOR_BUFFER_BIT);
-	glClear(GL_DEPTH_BUFFER_BIT);
-
-	program = m->get_program();
-	glUseProgram(program);
-
-	GLint pos_modelview, pos_projection, pos_normal;
-	pos_modelview = glGetUniformLocation(program, "modelview");
-	pos_projection = glGetUniformLocation(program, "projection");
-	pos_normal = glGetUniformLocation(program, "NormalMatrix");
-
-	quaternion q = quaternion(1, vec3(0, 0, 0));
-	model_rotate = orientation.asMatrix();
-
-	mat4 model_translate = translate(position);
-	mat4 model, view;
-
-	float ar = (float)window_width / window_height;
-	float size = 100;
-	
-	//view = FPSViewRH(vec3(xpos, 0, zpos), vec3(cam_yaw, 0, 0));
-	mat4 cam_rotate = cam_orientation.asMatrix();
-	view = LookAtRH(cam_pos, cam_lookat, vec3(0, 1, 0));
-	model = model_translate * model_rotate;
-
-	mat4 modelview = view * model;
-	mat4 projection = perspective(45.0f, (float)window_width / window_height, 1.0f, 200000.0f);
-
-	glUniformMatrix4fv(pos_modelview, 1, false, modelview);
-	glUniformMatrix4fv(pos_projection, 1, false, projection);
-	glUniformMatrix4fv(pos_normal, 1, false, model);
-	int err;
-	err = glGetError();
-
-	m->draw();
-	err = glGetError();
-
-	b->draw("Test", 10, 10);
-
-	glFlush();
-}
-
 void init(void)
 {
 	ShaderInfo shaders[] = {
@@ -152,67 +51,134 @@ void init(void)
 		{ GL_NONE, NULL }
 	};
 
-	m = new model(shaders, 3, "mdl.dae");
+	wrld = new world();
 
-	if (!m)
-		return;
+	float ar = (float)window_width / window_height;
+	camera *cam = new camera("camera0", 45.f, ar, 1.f, 200000.f);
+	cam->lookAtRH(vec3(0, 20, 50), vec3(0, 0, 0), vec3(0, 1, 0));
 
-//	program = LoadShaders(shaders);
-//	glUseProgram(program);
+	wrld->addCamera(cam);
+	wrld->setActiveCamera(cam);
 
-	program = m->get_program();
-	glUseProgram(program);
+	model *m = new model("model0", shaders, 3, "mdl.dae");
 
-	GLint ambientLoc = glGetUniformLocation(program, "Ambient");
-	vec4 ambient(.6f, .6f, .6f, 1.f);
-	glUniform4fv(ambientLoc, 1, ambient);
+	m->setBoundingVolumeVisible(true);
+	wrld->addObject(m);
+	wrld->setActiveObject(m);
 
-	GLint lightDirectionLoc = glGetUniformLocation(program, "LightDirection");
-	vec3 lightDirection = normalize(vec3(3, 1, 2));
-	glUniform3fv(lightDirectionLoc, 1, lightDirection);
+	if (m)
+	{
+		GLuint program = m->get_program();
+		glUseProgram(program);
+
+		GLint ambientLoc = glGetUniformLocation(program, "Ambient");
+		vec4 ambient(.6f, .6f, .6f, 1.f);
+		glUniform4fv(ambientLoc, 1, ambient);
+
+		GLint lightDirectionLoc = glGetUniformLocation(program, "LightDirection");
+		vec3 lightDirection = normalize(vec3(3, 1, 2));
+		glUniform3fv(lightDirectionLoc, 1, lightDirection);	
+	}
+
 	
 	glEnable(GL_DEPTH_TEST);
-	glClearColor(.15f, .35f, .75f, 0.f);
+	glClearColor(.30f, .45f, .75f, 0.f);
 	glPointSize(5);
 
-	b = new billboard(20,40,10,1600,1200);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	textLabel = new font("label0", "SegoeUI.bmp", window_width, window_height);
+	//wrld->addBillboard(textLabel);
+
+	/*ray *ry = new ray("ray0", vec3(0, 0, 0), vec3(0, 0, 10), 3, vec4(1, 1, 0, 1));
+	wrld->addObject(ry);
+	ry->setVisible(false);*/
+
+	ray *xAxis = new ray("X axis", vec3(0, 0, 0), vec3(100, 0, 0), 3, vec4(1, 0, 0, 1));
+	ray *yAxis = new ray("Y axis", vec3(0, 0, 0), vec3(0, 100, 0), 3, vec4(0, 1, 0, 1));
+	ray *zAxis = new ray("Z axis", vec3(0, 0, 0), vec3(0, 0, 100), 3, vec4(0, 0, 1, 1));
+
+	wrld->addObject(xAxis);
+	wrld->addObject(yAxis);
+	wrld->addObject(zAxis);
 }
 
-void rotateCamera(vec3& camPos, vec3& camLookAt, float xzDelta, float yDelta)
+int n = 0;
+vec3 _vec;
+
+void display(void)
 {
-	quaternion offset;
-	vec3 dif = camPos - camLookAt;
-	float delta = abs(.04f * dif[1]); // 4% allowance
+	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
-	offset = get_offset(vec3(0,1,0), xzDelta);
-
-	// prevent the XZ plane from flipping due camera vertical orientation
-	if (abs(dif[0]) < delta && abs(dif[2]) < delta &&
-		((dif[1] > 0 && yDelta > 0) ||
-		 (dif[1] < 0 && yDelta < 0)))
+	if (wrld)
 	{
-		yDelta = 0;
-	}
-	else
-	{
-		vec3 v = normalize(vec3(camPos[0], 0, camPos[2]));
-		vec3 perpendicularAxis = cross(vec3(0, 1, 0), v); // axis, perpendicular to the camera vector in XZ plane
+		wrld->render();	
 
-		quaternion yOffset = get_offset(perpendicularAxis, yDelta);
-		offset = offset * yOffset;
-	}
+		if (textLabel) 
+		{
+			scene_object *obj = wrld->getActiveObject();
+			if (obj)
+			{
+				char str[128] = { 0 };
+				vec3 v = obj->getPosition();
+				sprintf(str, "position: %.1f %.1f %.1f", v[0], v[1], v[2]);
+				textLabel->setText(str, vec2(10, 10));
+				textLabel->render();
 
-	mat4 pos;
-	pos = offset.asMatrix() * vec4(camPos, 1);
-	camPos[0] = pos[0][0];
-	camPos[1] = pos[0][1];
-	camPos[2] = pos[0][2];
+				v = obj->getOrientation();
+				sprintf(str, "direction: %.2f %.2f %.2f", v[0], v[1], v[2]);
+				textLabel->setText(str, vec2(10, 40));
+				textLabel->render();
+			}
+
+			camera *cam = wrld->getActiveCamera();
+			ray *ry = (ray *)wrld->getObject("ray0");
+
+			if (cam && ry)
+			{
+				char str[128] = { 0 };
+				vec3 v = cam->getPos();
+				sprintf(str, "cam pos: %.1f %.1f %.1f", v[0], v[1], v[2]);
+				textLabel->setText(str, vec2(10, 70));
+				textLabel->render();
+
+				v = ry->getOrigin();
+				sprintf(str, "ray origin: %.2f %.2f %.2f", v[0], v[1], v[2]);
+				textLabel->setText(str, vec2(10, 100));
+				textLabel->render();
+
+				v = ry->getDirection();
+				sprintf(str, "ray direction: %.2f %.2f %.2f", v[0], v[1], v[2]);
+				textLabel->setText(str, vec2(10, 130));
+				textLabel->render();
+				
+				v = _vec;
+				sprintf(str, "wor: %.2f %.2f %.2f", v[0], v[1], v[2]);
+				textLabel->setText(str, vec2(10, 160));
+				textLabel->render();
+			}
+		}	
+	
+		glFlush();
+	}
 }
 
 void cleanup()
 {
-	if (m)
-		delete m;
+	if (wrld)
+	{
+		delete wrld;
+		wrld = NULL;
+	}
+
+	if (textLabel)
+	{
+		delete textLabel;
+	}
+
+	_CrtDumpMemoryLeaks();
 }
 
 void keyboard_callback(unsigned char key, int x, int y)
@@ -224,131 +190,121 @@ void keyboard_callback(unsigned char key, int x, int y)
 
 	switch (key)
 	{
-	case 111:
-		v = model_rotate * dir;
-		position += vec3(v[0][0], v[0][1], v[0][2]);
-		break;
-
-	case 108:
-		v = model_rotate * dir;
-		position -= vec3(v[0][0], v[0][1], v[0][2]);
-		break;
-
 	case 27:
 		cleanup();
 		glutLeaveMainLoop();
+		return;
 		break;
 
-	case 97:
-		axis = vec3(0, 1, 0);
-		angle = -.1f;
-		offset = get_offset(axis, angle);
-		orientation = offset * orientation;
-		orientation = normalize(orientation);
-		break;
-
-	case 100:
-		axis = vec3(0, 1, 0);
-		angle = .1f;
-		offset = get_offset(axis, angle);
-		orientation = offset * orientation;
-		orientation = normalize(orientation);
-		break;
-
-	case 113:
-		axis = vec3(0, 0, 1);
-		angle = .1f;
-		offset = get_offset(axis, angle);
-		orientation = offset * orientation;
-		orientation = normalize(orientation);
-		break;
-
-	case 101:
-		axis = vec3(0, 0, 1);
-		angle = -.1f;
-		offset = get_offset(axis, angle);
-		orientation = offset * orientation;
-		orientation = normalize(orientation);
-		break;
-
-	case 119:
-		axis = vec3(1, 0, 0);
-		angle = -.1f;
-		offset = get_offset(axis, angle);
-		orientation = offset * orientation;
-		orientation = normalize(orientation);
-		break;
-
-	case 115:
-		axis = vec3(1, 0, 0);
-		angle = .1f;
-		offset = get_offset(axis, angle);
-		orientation = offset * orientation;
-		orientation = normalize(orientation);
-		break;
-	
 	default:
-		break;
+		wrld->processKeyboardInput(key);
 	}
 
-	printf("z: %1.1f\n", zpos);
 	glutPostRedisplay();
 }
 
 void timer_callback(int value)
 {
-	//obj_yangle += 1;
 	glutPostRedisplay();
 	glutTimerFunc(30, timer_callback, 0);
 }
 
 void mouse_callback(int x, int y, int l0, int l1)
 {
+	camera *cam = wrld->getActiveCamera();
+
+	if (!y)
+		mouse_buttons[x] = 1;
+	else
+		mouse_buttons[x] = 0;
+
 	if (x == 3)
 	{
-		cam_pos -= normalize(cam_pos - cam_lookat);
+		cam->moveForward(-1);
 		glutPostRedisplay();
 	}
 
 	if (x == 4)
 	{
-		cam_pos += normalize(cam_pos - cam_lookat);
+		cam->moveForward(1);
 		glutPostRedisplay();
 	}
-
 }
 
-void motion_callback(int x, int y)
+void motion_callback(int mx, int my)
 {
-	float xDelta = 0;
-	float yDelta = 0;
-	int xDiff = mouse_x_prev - x;
-	int yDiff = mouse_y_prev - y;
-
-	if ((xDiff) > 0)
+	if (mouse_buttons[0])
 	{
-		xDelta = -.05f;
-	}
-	else if ((xDiff) < 0)
-	{
-		xDelta = +.05f;
-	}
+		float xDelta = 0;
+		float yDelta = 0;
+		int xDiff = mouse_x_prev - mx;
+		int yDiff = mouse_y_prev - my;
 
-	if ((yDiff) > 0)
-	{
-		yDelta = -.05f;
-	}
-	else if ((yDiff) < 0)
-	{
-		yDelta = +.05f;
-	}
+		if ((xDiff) > 0)
+		{
+			xDelta = -.02f;
+		}
+		else if ((xDiff) < 0)
+		{
+			xDelta = +.02f;
+		}
 
-	rotateCamera(cam_pos, cam_lookat, xDelta, yDelta);
+		if ((yDiff) > 0)
+		{
+			yDelta = -.02f;
+		}
+		else if ((yDiff) < 0)
+		{
+			yDelta = +.02f;
+		}
 
-	mouse_x_prev = x;
-	mouse_y_prev = y;
+		camera *cam = wrld->getActiveCamera();
+		cam->rotate(xDelta, yDelta);
+
+		mouse_x_prev = mx;
+		mouse_y_prev = my;
+	}
 
 	glutPostRedisplay();
+}
+
+void passive_motion_callback(int mx, int my)
+{
+	if (!mouse_buttons[0])
+	{
+		camera *cam = wrld->getActiveCamera();
+		//ray *ry = (ray *)wrld->getObject("ray0");
+
+		float x = (2.0f * mx) / window_width - 1.0f;
+		float y = 1.0f - (2.0f * my) / window_height;
+		float z = 1.0f;
+		vec3 ray_nds = vec3(x, y, z);
+		vec4 ray_clip = vec4(ray_nds[0], ray_nds[1], -1.0, 1.0);
+		mat4 inv = inverseMat4(cam->getProjection());
+		mat4 ray_eye = inv * ray_clip;
+		vec4 eye(ray_eye[0][0], ray_eye[0][1], -1, 0);
+
+		mat4 ray_wor = (inverseMat4(cam->getMatrix()) * eye);
+		vec3 wor(ray_wor[0][0], ray_wor[0][1], ray_wor[0][2]);
+		wor = normalize(wor);
+		_vec = wor;
+
+		vec3 origin = cam->getPos() + wor * 10.f; // cam->getPos() + normalize(cam->getLookAt() - cam->getPos());
+		vec3 direction = origin + wor * 60;
+		/*ry->setCoords(origin, direction);
+		ry->setVisible(true);*/
+
+		scene_object *mdl = wrld->getObject("model0");
+		if (mdl)
+		{
+			if (mdl->intersects(cam->getPos(), wor))
+			{
+				mdl->setAlpha(.5f);
+			}
+			else
+				mdl->setAlpha(1);
+		}
+	} 
 }
 
 void reshape(int w, int h)
@@ -359,6 +315,8 @@ void reshape(int w, int h)
 	glutPostRedisplay();
 }
 
+
+
 int main(int argc, char* argv[])
 {
 	SetProcessDPIAware();
@@ -367,7 +325,7 @@ int main(int argc, char* argv[])
 	glutInitWindowSize(1600, 1200);
 	glutInitContextVersion(3, 3);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
-	glutCreateWindow("Preview");
+	window = glutCreateWindow("Preview");
 
 	if (glewInit())
 	{
@@ -382,6 +340,7 @@ int main(int argc, char* argv[])
 	glutKeyboardFunc(keyboard_callback);
 	glutMouseFunc(mouse_callback);
 	glutMotionFunc(motion_callback);
+	glutPassiveMotionFunc(passive_motion_callback);
 	glutTimerFunc(30, timer_callback, 0);
 	glutMainLoop();
 

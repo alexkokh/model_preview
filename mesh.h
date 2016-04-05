@@ -1,23 +1,25 @@
 #pragma once
 
 #include "common.h"
-#include "rendering.h"
+#include "scene.h"
+#include "camera.h"
+#include "bounding_box.h"
 
 using namespace std;
 using namespace DAE_READER;
 
 namespace SE_CORE
 {
-	class mesh : public render_target
+	class mesh : public scene_object
 	{
 	private:
 		vector<vector<vector<draw_range_t>>> _MeshDrawRange;
 	public:
 		mesh();
-		mesh(ShaderInfo *shaders, int numShaders);
+		mesh(string name, ShaderInfo *shaders, uint32_t numShaders);
 		virtual ~mesh();
 
-		int load(char *path);
-		void draw();
+		uint32_t load(char *path);
+		virtual void render(camera *cam);
 	};
 }

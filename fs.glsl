@@ -4,6 +4,7 @@ uniform sampler2D tex0;
 uniform sampler2D tex1;
 uniform vec4 Ambient;
 uniform vec3 LightDirection;
+uniform float alpha;
 
 in vec2 tex_coord;
 in vec3 normal;
@@ -16,5 +17,6 @@ void main(void)
 	vec4 texColor = texture(tex0, tex_coord);
 	float intensity = max(0.2, dot(normal, LightDirection));
 	color = min(intensity * Ambient, vec4(1.0));
+	color.a = alpha;
 	//color = .5*texture(tex0, tex_coord).rgba + .5*texture(tex1, tex_coord).rgba;
 }
